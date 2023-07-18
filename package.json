@@ -1,0 +1,22 @@
+{
+  "name": "3345678",
+  "version": "12.34.567",
+  "description": "vedio streaming test, socket.io is using version#2 in order to get rid of CORS error",
+  "main": "./server/proxy.js",
+  "scripts": {
+    "proxy": "cd server && nodemon proxy.js",
+    "server": "cd server && nodemon server.js",
+    "dev": "concurrently \"npm run proxy\" \"npm run server\""
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.0",
+    "express": "^4.18.2",
+    "http-proxy": "^1.18.1",
+    "socket.io": "^2.5.0"
+  },
+  "author": "paranoidFrappe",
+  "license": ""
+}

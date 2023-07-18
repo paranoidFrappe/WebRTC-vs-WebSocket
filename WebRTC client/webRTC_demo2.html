@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>CodeSmith TechTalk Demo WebRTC</title>
+    <meta name='CodeSmith TechTalk Demo WebRTC Client B'>
+    <style>
+        body {
+            width: 800px;
+            margin: 0 auto;
+        }
+
+        #videos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 1em;
+            width: 100%;
+            padding: 0px 0px 10px 0px;
+        }
+
+        #clientB {
+            width: 100%;
+            border: 2mm ridge rgba(178, 227, 255, 0.542);
+            background-color: rgb(5, 129, 129);
+        }
+
+        #clientA{
+            width: 100%;
+            border: 2mm ridge rgba(178, 227, 255, 0.542);
+            background-color: rgb(157, 20, 166);
+        }
+
+        textarea {
+            height: 130px;
+            width: 100%;
+        }
+
+        .toLeftH4,
+        .toRightH4 {
+            display: inline-block;
+            width: 50%;
+            box-sizing: border-box;
+        }
+
+        .toRightH4 {
+            text-align: right;
+        }
+
+        .LRMother {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .block001 {
+            background-color: rgb(255, 153, 184);
+            padding: 10px;
+            margin: 5px;
+        }
+
+        .block002 {
+            background-color: rgb(136, 197, 255);
+            padding: 10px;
+            margin: 5px;
+        }
+
+        @media screen and (max-width: 800px) {
+            body {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h2>CodeSmith TechTalk Demo WebRTC</h2>
+    </div>
+    <div class = 'LRMother'>
+        <h4 class = 'toLeftH4'>This is the streaming window source of client B</h4>
+        <h4 class = 'toRightH4'>This is the streaming window source of client A</h4>
+    </div>
+    <!-- This div is the videos' place holder -->
+    <div id="videos">
+        <video id="clientB" autoplay playsinline></video>
+        <video id="clientA" autoplay playsinline></video>
+    </div>
+    <!-- This is the area to drop down the selection for choosing different camera input -->
+    <div id="camera_selection">
+        <label for="camera-dropdown">Select Camera:</label>
+        <select id="camera-dropdown"></select>
+    </div>
+    <!-- This is the block for coping and pasting the SDP from client A -->
+    <div class="block001">
+        <label>Receiving the SDP from client A: </label>
+        <textarea id="clientB'sSDP" placeholder="Session Description Protocol from client A"></textarea>
+    </div>
+    <!-- This is the block for client B to generate the answer SDP -->
+    <div class="block002">
+        <button id="generate-answer-SDP">Generate a SDP of client B !</button>
+        <br>
+        <label>This is the SDP of client B: </label>
+        <textarea id="answerSDP" placeholder="Session Description Protocol of client B"></textarea>
+    </div>
+
+    <script>
+        // Declaring a variable, we assign the WebRTC peer connection to it.
+        let peerConnection = new RTCPeerConnection();
+        let clientBStream;
+        let clientAStream;
+    
+        let runWebRTCViedoStream = async () => {
+            // Try to find the user's client video input, just any one of that if available, then we assign it to navigator.mediaDevices.getUserMedia
+            // Currently processing video data only
+            // Currently do not processing audio data
+            clientBStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+            clientAStream = new MediaStream();
+            // Video clientB to render the client B's video
+            document.getElementById('clientB').srcObject = clientBStream;
+            // Video clientA to render the client A's video
+            document.getElementById('clientA').srcObject = clientAStream;
+            // Add the tracks from clientBStream to the peerConnection
+            clientBStream.getTracks().forEach((track) => {
+                peerConnection.addTrack(track, clientBStream);
+            });
+            // Set up the event handler to receive tracks from the remote peer (client A)
+            peerConnection.ontrack = (event) => {
+                // Add the received tracks from client A to the clientAStream
+                event.streams[0].getTracks().forEach((track) => {
+                    clientAStream.addTrack(track);
+                });
+            };
+    
+            navigator.mediaDevices.enumerateDevices()
+                .then(devices => {
+                    console.log('devices: ', devices);
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    const cameraDropdown = document.getElementById('camera-dropdown');
+                    // Destructure the video selections and attach these to dropdown option in order to visualize the selections and be able to select it
+                    videoDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Camera ${cameraDropdown.children.length + 1}`;
+                        cameraDropdown.appendChild(option);
+                    });
+                    // If the user really want to change the video input selection, we let them change *~>.0 
+                    cameraDropdown.addEventListener('change', (event) => {
+                        const selectedDeviceId = event.target.value;
+                        startVideoStream(selectedDeviceId);
+                    });
+                    // If the user not select the video input selection manually, then we select for the user by default...... 
+                    // Select the first one if there is any
+                    if (videoDevices.length > 0) {
+                        startVideoStream(videoDevices[0].deviceId);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error accessing media devices:', error);
+                });
+        };
+    
+        function startVideoStream(deviceId) {
+            // Try to find the user's client video input, just any one of that if available, then we assign it to navigator.mediaDevices.getUserMedia
+            navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msgGetUserMedia);
+            // If navigator.getUserMedia is truthy
+            if (navigator.getUserMedia) {
+                navigator.getUserMedia(
+                    {
+                        // Currently processing video data only
+                        video: { deviceId: { exact: deviceId } },
+                        // Currently do not processing audio data
+                        audio: false
+                    }, loadCamera, loadFail);
+            }
+        }
+
+        // Callback function for loading camera
+        function loadCamera(stream) {
+            try {
+                document.getElementById('clientB').srcObject = stream;
+            } catch (error) {
+                document.getElementById('clientB').src = URL.createObjectURL(stream);
+            }
+            // If the camera has been loaded successfully, we render the message
+            console.log('Camera connected');
+        }
+        // If the camera has NOT been loaded successfully, we render the disappointed message.
+        function loadFail() {
+            console.log('Camera not connected');
+        }
+        // We will invoking this function after you click the button "Generate a SDP of client B !"
+        let createSDPAnswer = async () => {
+            let offer = JSON.parse(document.getElementById("clientB'sSDP").value);
+    
+            peerConnection.onicecandidate = async (event) => {
+                // If a new offer ICE candidate is created
+                if (event.candidate) {
+                    // Grab the babyblue area's corresponding value
+                    // Currently using JSON.stringify method in order to visualize the SDP
+                    document.getElementById('answerSDP').value = JSON.stringify(peerConnection.localDescription);
+                }
+            };
+            // Set the remote description of the peer connection to the SDP offer received from client A
+            await peerConnection.setRemoteDescription(offer);
+            // Create an SDP answer as a response
+            let answer = await peerConnection.createAnswer();
+            // Set the local (client B) description of the peer connection to the created SDP answer
+            await peerConnection.setLocalDescription(answer);
+        };
+    
+        runWebRTCViedoStream();
+        // This is the button "Generate a SDP of client B !"
+        document.getElementById('generate-answer-SDP').addEventListener('click', createSDPAnswer);
+    </script>
+    
+    
+    
+</body>
+
+</html>

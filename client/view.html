@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <title>CodeSmith TechTalk Demo WebSocket client side</title>
+    <script src="/js/socket.io.js"></script>   
+    <style>
+        body {
+            width: 800px;
+            margin: 0 auto;
+        }
+        .websocketServerPng {
+            width: 200px;
+            position: relative;
+            top: 50%;
+        }
+        #videos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 1em;
+            width: 100%;
+            padding: 5px;
+        }
+        #videoFromWebSocketServer {
+            width: 100%;
+            border: 2mm ridge rgba(178, 227, 255, 0.542);
+            background-color: rgb(157, 20, 166);
+        }
+        @media screen and (max-width: 800px) {
+            body {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>CodeSmith TechTalk Demo WebSocket client side</h2>
+    <div id="videos">
+        <!-- You know... this is just a picture represents something is sending from WebSocket in order to demo and explain -->
+        <img class="websocketServerPng" src="./websocketServer.png">
+        <!-- declaring an image for rendering the video content -->
+        <img id="videoFromWebSocketServer">
+    </div>
+    <script>
+        // Declaring socket as a client to communicate to websocket server via port 8001
+        var socket = io('ws://localhost:8001');
+        // whenever the client received the message from Websocket server by the event name'streamReturnBackToClients'   
+        socket.on('streamReturnBackToClients', function(image) {            
+            // Give that image on line 40 a src in order to rendering the passing object which is the argument image
+            document.getElementById('videoFromWebSocketServer').setAttribute('src', image);
+        });
+    </script>
+</body>
+</html>

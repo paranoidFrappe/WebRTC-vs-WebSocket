@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="/js/socket.io.js"></script>
+    <title>CodeSmith TechTalk Demo WebSocket streaming side</title>
+    <style>
+      body {
+        width: 800px;
+        margin: 0 auto;
+      }
+      .websocketServerPng {
+        width: 200px;
+        position: relative;
+        top: 50%;
+      }
+      #videos {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 0px;
+      }
+      video {
+        flex: 1;
+        width: 390px;
+        border: 2mm ridge rgba(178, 227, 255, 0.542);
+        background-color: rgb(5, 129, 129);
+      }
+      #videoFromWebSocketServer {
+        flex: 1;
+        width: 390px;
+        border: 2mm ridge rgba(178, 227, 255, 0.542);
+        background-color: rgb(157, 20, 166);
+      }
+      @media screen and (max-width: 800px) {
+        body {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <h2>CodeSmith TechTalk Demo WebSocket Video Streaming Demo</h2>
+    <!-- This div is the videos' place holder -->
+    <div id="videos">
+      <video src="" id="video" autoplay playsinline></video>
+      <!-- You know... this is just a picture represents something is sending from WebSocket in order to demo and explain -->
+      <img class="websocketServerPng" src="./websocketServer.png">
+      <!-- declaring an image for rendering the video content -->
+      <img id="videoFromWebSocketServer" autoplay playsinline>
+    </div>
+    </br>
+    <canvas style="display:none;" id="videoFromWebSocketServerOfCanvas"></canvas>
+    <!-- This is the div for telling the video strean host if the camera is connected -->
+    <div id="log"></div>
+    <!-- This is the area to drop down the selection for choosing different camera input -->
+    <label for="camera-dropdown">Select Camera:</label>
+    <select id="camera-dropdown"></select>
+
+    <script>
+      // Define a canva for reflecting the video to be send to WebSocket 
+      // Just like a mirror, video streaming hosts are able to see themselves
+      var canvas = document.getElementById("videoFromWebSocketServerOfCanvas");
+      var ctx = canvas.getContext('2d');
+      // Define the width and height of the canvas
+      // The higher the numbers, the better the visualization performance, but it will also require a higher internet connection
+      canvas.width = 800;
+      canvas.height = 600;
+
+      ctx.width = canvas.width;
+      ctx.height = canvas.height;
+
+      var video = document.getElementById("video");
+      // Declaring socket as a video stream host to communicate to websocket server via port 8001
+      // Actually the video stream host is a kind of client as well 
+      var socket = io('ws://localhost:8001');
+      // For viewing the message instead of keep using console.log
+      function logger(msg) {
+        document.getElementById('log').textContent = msg;
+      }
+      // Callback function for loading camera
+      function loadCamera(stream) {
+        try {
+          video.srcObject = stream;
+        } catch (error) {
+          video.src = URL.createObjectURL(stream);
+        }
+      // If the camera has been loaded successfully, we render the message
+        logger("Camera connected");
+      }
+      // If the camera has NOT been loaded successfully, we render the disappointed message.
+      function loadFail() {
+        logger("Camera not connected");
+      }
+      // Utelize HTML Canvas to draw the pictures/images
+      function Draw(video, ctx) {
+        ctx.drawImage(video, 0, 0, ctx.width, ctx.height);
+        // Sending the video streaming data as image type data to WebSocket server (currently define the event name as 'stream') 
+        socket.emit('stream', canvas.toDataURL('image/webp'));
+      }
+      // Setting the drop down selection just incase if the host has several camera
+      document.addEventListener('DOMContentLoaded', function () {
+        navigator.mediaDevices.enumerateDevices()
+          .then(devices => {
+            console.log('devices: ', devices);
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            const cameraDropdown = document.getElementById('camera-dropdown');
+            // Destructure the video selections and attach these to dropdown option in order to visualize the selections and be able to select it
+            videoDevices.forEach(device => {
+              const option = document.createElement('option');
+              option.value = device.deviceId;
+              option.text = device.label || `Camera ${cameraDropdown.options.length + 1}`;
+              cameraDropdown.appendChild(option);
+            });
+            // If the user really want to change the video input selection, we let them change *~>.0 
+            cameraDropdown.addEventListener('change', (event) => {
+              const selectedDeviceId = event.target.value;
+              startVideoStream(selectedDeviceId);
+            });
+            // If the user not select the video input selection manually, then we select for the user by default...... 
+            // Select the first one if there is any  
+            if (videoDevices.length > 0) {
+              startVideoStream(videoDevices[0].deviceId);
+            }
+          })
+          .catch(error => {
+            console.error('Error accessing media devices:', error);
+          });
+
+        // This is 60 FPS setting, every 1 seconds = 1000ms
+        // Draw 60 times every second
+        setInterval(function () {
+          Draw(video, ctx);
+        }, 1000/60);
+      });
+
+
+      function startVideoStream(deviceId) {
+        // Try to find the user's video input, just any one of that if available, then we assign it to navigator.getUserMedia
+        navigator.getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msgGetUserMedia);
+        // If navigator.getUserMedia is truthy
+        if (navigator.getUserMedia) {
+          navigator.getUserMedia({
+            // Currently processing video data only
+            video: { deviceId: { exact: deviceId } },
+            // Currently do not processing audio data
+            audio: false
+          }, loadCamera, loadFail);
+        }
+      }
+      // Declaring socket2 as a client to communicate to websocket server via port 8001
+      var socket2 = io('ws://localhost:8001');
+      // whenever the client received the message from Websocket server by the event name'streamReturnBackToClients'      
+      socket2.on('streamReturnBackToClients', function (image) {
+        // Give that image a src in order to rendering the passing object which is the argument image
+        document.getElementById('videoFromWebSocketServer').setAttribute('src', image);
+      });
+    </script>
+  </body>
+</html>
+
