@@ -25,6 +25,7 @@ npm run dev
 - **Step 4:** Go to localhost:8000, and you can make a choice to go to which branch you prefer
 
 > Or, you may go to localhost:8000/stream directly for hosting the video streaming via WebSocket.
+
 > Also, you may go to localhost:8000/view directly for representing a audience of the video streaming via WebSocket. (You may open localhost:8000/view as much as possible to have fun)
 
 - **Step 5:** For the WebRTC, Please go to /WebRTC client folder, there is another README for WebRTC video streaming.
