@@ -1,4 +1,4 @@
-# My Techtalk Live Demo: WebSocket vs. WebRTC Video Streaming Latency Comparison
+# WebSocket vs. WebRTC Video Streaming Latency Comparison
 
 Welcome to the My Techtalk live demo, where we'll compare the latency of video streaming using WebSocket and WebRTC.
 
