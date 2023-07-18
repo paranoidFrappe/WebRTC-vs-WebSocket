@@ -34,6 +34,6 @@ npm run dev
 
 > Note: This demo is for educational purposes to compare the latency of video streaming using WebSocket and WebRTC. It showcases the differences between the two technologies and their implications on real-time video communication.
 
-Please feel free to explore the demo, experiment with the streaming options, and provide any feedback or questions.
+Enjoy exploring the WebSocket and WebRTC video streaming demo! If you have any questions or feedback, feel free to reach out to me.
 
 Happy streaming! 🚀🚀🚀🚀🚀🚀🚀
