@@ -14,7 +14,7 @@ This is a demo page for the handshaking progress before WebRTC communication bet
 
 - **Step 4:** Go back to the file `webRTC_demo.html` and paste the copied SDP object into the baby blue textarea named "Waiting for SDP from client B".
 
-- **Step 5:** On the same `webRTC_demo.html`, click the button "Got the answer from another client *~>W0" to see the consequence of signaling for WebRTC communication.
+- **Step 5:** On the same `webRTC_demo.html`, click the button "Got the answer from another client *~>w0" to see the consequence of signaling for WebRTC communication.
 
 <br />
 
